@@ -1,0 +1,53 @@
+{
+  // Required
+  "manifest_version": 2,
+  "name": "Zhihu Helper",
+  "version": "1.0.0",
+  "icons": {
+    "16": "icons/icon1.png",
+    "32": "icons/icon1.png",
+    "54": "icons/icon1.png"
+  },
+  "browser_action":
+	{
+    "name": "b_a",
+		// 图标悬停时的标题，可选
+		"default_title": "ZhiHu Helper",
+    "default_icon": "icons/icon1.png",
+    "default_popup": "popup.html"
+	},
+  "background": {
+    "scripts": ["scripts/background.js"]
+  },
+  "options_ui": {
+    "chrome_style": true,
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "scripts/content.js"
+      ],
+      "run_at": "document_end",
+      "all_frames": false
+    }
+  ],
+	// 权限申请
+	"permissions":
+	[
+    "activeTab", // 激活 tab
+		"contextMenus", // 右键菜单
+		"tabs", // 标签
+		"notifications", // 通知
+		"webRequest", // web请求
+		"webRequestBlocking",
+		"storage", // 插件本地存储
+		"http://*/*", // 可以通过executeScript或者insertCSS访问的网站
+		"https://*/*" // 可以通过executeScript或者insertCSS访问的网站
+	]
+}
