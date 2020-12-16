@@ -1,67 +1,55 @@
-
-function print() {
-  console.log(chrome.browserAction)
+// 扩展程序向 content script 发送信息使用的就是 tabs.sendMessage
+// 需要指定发送至哪一个标签页
+function sendMessageToContentScript(message, callback){
+  chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+		var tabId = tabs.length ? tabs[0].id: null;
+    if (tabId) {
+      chrome.tabs.sendMessage(tabId, message, callback ? function(response) {
+  			if(callback) {
+          callback(response);
+        }
+  		} : null)
+    } else {
+      console.log('找不到激活的标签页');
+    }
+	})
 }
 
-function updateIcon() {
-  chrome.storage.sync.get('number', function(data) {
-    var current = data.number;
-    if (!current) {
-      current = 1
-    }
-    chrome.browserAction.setIcon({path: 'img/icon' + current + '.png'});
-    current++;
-    if (current > 3)
-      current = 1;
-    chrome.storage.sync.set({number: current}, function() {
-      console.log('The number is set to ' + current);
-    });
-  });
-};
+function sendMessageToPopup(msg) {
+  // background 访问 popup 如下，popup 打开时才能获取到
+  // 每次打开或刷新 backgroud，js 都会重新加载，下段代码都会重新执行
 
-chrome.runtime.onInstalled.addListener(function() {
-  chrome.storage.sync.set({number: 1}, function() {
-    console.log('The number is set to 1.');
-  });
-});
+  // 调试步骤：
+  //
+  // 先打开背景页，console tab 下会输出 ---views--- []
+  // 点击你的扩展，弹出 popup 页面
+  // 刷新背景页面的控制台，就可以看到输出的内容了
+  var views = chrome.extension.getViews({ type: "popup" });
+  console.log("---views---", views);
+  if (views.length > 0) {
+      console.log(views[0].location.href);
+      views[0].popheart(msg)
+  }
+}
+
+function dojob() {
+  sendMessageToContentScript('get id', (res) => {
+    console.log('b received =', res)
+  })
+}
+
+function heartbeat() {
+  sendMessageToContentScript('heartbeat msg')
+  sendMessageToPopup('b->p')
+}
 
 chrome.runtime.onMessage.addListener(
   function(request, sender, sendResponse) {
-    if(request.action === "g_id2") {
-      console.log("Extension Type: ", "/* @echo extension */");
-      console.log("PERFORM AJAX", request.data);
-
-      sendResponse({ action: "g_id——d" });
-
-      sendMsg()
+    console.log('background 收到消息：' + request);
+    if (sendResponse) {
+      sendResponse("backgroud back")
     }
   }
 );
 
-// 获取当前选项卡ID
-function getCurrentTabId(callback)
-{
-	chrome.tabs.query({active: true, currentWindow: true}, function(tabs)
-	{
-		if(callback) callback(tabs.length ? tabs[0].id: null);
-	});
-}
-
-function sendMessageToContentScript(message, callback){
-	getCurrentTabId((tabId) => {
-		chrome.tabs.sendMessage(tabId, message, function(response) {
-			if(callback) {
-        callback(response);
-      }
-		})
-	})
-}
-
-function sendMsg() {
-  sendMessageToContentScript('你好，我是bg！', (response) => {
-  	if(response) alert('收到来自content-script的回复：'+response);
-  });
-}
-
-// chrome.browserAction.onClicked.addListener(updateIcon);
-// updateIcon();
+// end
